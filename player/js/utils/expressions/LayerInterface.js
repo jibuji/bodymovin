@@ -140,6 +140,12 @@ var LayerExpressionInterface = (function (){
             }
         });
 
+        Object.defineProperty(_thisLayerFunction, "timeRemap", {
+            get: function(){
+                return makeTimeRemapExpressionProperty(elem.tm);
+            }
+        });
+
         _thisLayerFunction.registerMaskInterface = _registerMaskInterface;
         _thisLayerFunction.registerEffectsInterface = _registerEffectsInterface;
         return _thisLayerFunction;
