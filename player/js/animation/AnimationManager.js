@@ -15,7 +15,7 @@ var animationManager = (function(){
                 i -= 1;
                 len -= 1;
                 if(!animItem.isPaused){
-                    subtractPlayingCount();   
+                    subtractPlayingCount();
                 }
             }
             i += 1;
@@ -97,7 +97,7 @@ var animationManager = (function(){
     }
 
     function resume(nowTime) {
-
+      console.log('len=', len)
         var elapsedTime = nowTime - initTime;
         var i;
         for(i=0;i<len;i+=1){

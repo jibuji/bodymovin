@@ -58,42 +58,54 @@ function dataFunctionManager(){
         }
     }
 
-    function completeShapes(arr){
-        var i, len = arr.length;
-        var j, jLen;
-        var hasPaths = false;
-        for(i=len-1;i>=0;i-=1){
-            if(arr[i].ty == 'sh'){
-                if(arr[i].ks.k.i){
-                    convertPathsToAbsoluteValues(arr[i].ks.k);
-                }else{
-                    jLen = arr[i].ks.k.length;
-                    for(j=0;j<jLen;j+=1){
-                        if(arr[i].ks.k[j].s){
-                            convertPathsToAbsoluteValues(arr[i].ks.k[j].s[0]);
-                        }
-                        if(arr[i].ks.k[j].e){
-                            convertPathsToAbsoluteValues(arr[i].ks.k[j].e[0]);
-                        }
-                    }
+    function completeShapes( arr ) {
+      var i, len = arr.length;
+      var j, jLen;
+      var hasPaths = false;
+      for ( i = len - 1; i >= 0; i -= 1 ) {
+        if ( arr[ i ].ty == 'sh' ) {
+          if ( arr[ i ].ks.k.i ) {
+            convertPathsToAbsoluteValues( arr[ i ].ks.k );
+          } else {
+            let kfs = arr[ i ].ks.k;
+            jLen = kfs.length;
+            for ( j = 0; j < jLen; j += 1 ) {
+              let kf = kfs[j];
+              if (kf.i) {
+                //when animation is 0, and ks.k ia an array
+                convertPathsToAbsoluteValues( kf);
+              }
+              if ( kf.s ) {
+                let lens = kf.s.length;
+                for (let i = 0; i < lens; i++) {
+                  convertPathsToAbsoluteValues( kf.s[ i ] );
                 }
-                hasPaths = true;
-            }else if(arr[i].ty == 'gr'){
-                completeShapes(arr[i].it);
+              }
+              if ( kf.e ) {
+                let lens = kf.e.length;
+                for (let i = 0; i < lens; i++) {
+                  convertPathsToAbsoluteValues( kf.e[ i ] );
+                }
+              }
             }
+          }
+          hasPaths = true;
+        } else if ( arr[ i ].ty == 'gr' ) {
+          completeShapes( arr[ i ].it );
         }
-        /*if(hasPaths){
-            //mx: distance
-            //ss: sensitivity
-            //dc: decay
-            arr.splice(arr.length-1,0,{
-                "ty": "ms",
-                "mx":20,
-                "ss":10,
-                 "dc":0.001,
-                "maxDist":200
-            });
-        }*/
+      }
+      /*if(hasPaths){
+          //mx: distance
+          //ss: sensitivity
+          //dc: decay
+          arr.splice(arr.length-1,0,{
+              "ty": "ms",
+              "mx":20,
+              "ss":10,
+               "dc":0.001,
+              "maxDist":200
+          });
+      }*/
     }
 
     function convertPathsToAbsoluteValues(path){

@@ -3,120 +3,141 @@ var ShapePropertyFactory = (function(){
     var initFrame = -999999;
 
     function interpolateShape() {
-        if(this.elem.globalData.frameId === this.frameId){
-            return;
-        }
-        this.mdf = false;
-        var frameNum = this.comp.renderedFrame - this.offsetTime;
-        if(!((this.lastFrame !== initFrame && ((this.lastFrame < this.keyframes[0].t-this.offsetTime && frameNum < this.keyframes[0].t-this.offsetTime) || (this.lastFrame > this.keyframes[this.keyframes.length - 1].t-this.offsetTime && frameNum > this.keyframes[this.keyframes.length - 1].t-this.offsetTime))))){
-            var keyPropS,keyPropE,isHold;
-            if(frameNum < this.keyframes[0].t-this.offsetTime){
-                keyPropS = this.keyframes[0].s[0];
-                isHold = true;
-                this._lastIndex = 0;
-            }else if(frameNum >= this.keyframes[this.keyframes.length - 1].t-this.offsetTime){
-                if(this.keyframes[this.keyframes.length - 2].h === 1){
-                    keyPropS = this.keyframes[this.keyframes.length - 1].s[0];
-                }else{
-                    keyPropS = this.keyframes[this.keyframes.length - 2].e[0];
-                }
-                isHold = true;
-            }else{
-                var i = this.lastFrame < initFrame ? this._lastIndex : 0;
-                var len = this.keyframes.length- 1,flag = true,keyData,nextKeyData, j, jLen, k, kLen;
-                while(flag){
-                    keyData = this.keyframes[i];
-                    nextKeyData = this.keyframes[i+1];
-                    if((nextKeyData.t - this.offsetTime) > frameNum){
-                        break;
-                    }
-                    if(i < len - 1){
-                        i += 1;
-                    }else{
-                        flag = false;
-                    }
-                }
-                isHold = keyData.h === 1;
-                this._lastIndex = i;
+      if ( this.elem.globalData.frameId === this.frameId ) {
+        return;
+      }
+      this.mdf = false;
+      var frameNum = this.comp.renderedFrame - this.offsetTime;
+      if ( this.lastFrame !== initFrame &&
+        (   ( this.lastFrame < this.keyframes[ 0 ].t - this.offsetTime && frameNum < this.keyframes[ 0 ].t - this.offsetTime ) ||
+        ( this.lastFrame > this.keyframes[ this.keyframes.length - 1 ].t - this.offsetTime && frameNum > this.keyframes[ this.keyframes.length - 1 ].t - this.offsetTime ) )
+      ) {
+        return;
+      }
+      let vaLen = this.va.length;
+      //this.paths.length = 0;
+      for (let i = 0; i < vaLen; i++) {
+        this.paths[ i ] = interpolateSubShape.bind(this)(frameNum, i);
+      }
+      this.paths = this.localShapeCollection;
 
-                var perc;
-                if(!isHold){
-                    if(frameNum >= nextKeyData.t-this.offsetTime){
-                        perc = 1;
-                    }else if(frameNum < keyData.t-this.offsetTime){
-                        perc = 0;
-                    }else{
-                        var fnc;
-                        if(keyData.__fnct){
-                            fnc = keyData.__fnct;
-                        }else{
-                            fnc = BezierFactory.getBezierEasing(keyData.o.x,keyData.o.y,keyData.i.x,keyData.i.y).get;
-                            keyData.__fnct = fnc;
-                        }
-                        perc = fnc((frameNum-(keyData.t-this.offsetTime))/((nextKeyData.t-this.offsetTime)-(keyData.t-this.offsetTime)));
-                    }
-                    keyPropE = keyData.e[0];
-                }
-                keyPropS = keyData.s[0];
-            }
-            jLen = this.v._length;
-            kLen = keyPropS.i[0].length;
-            var hasModified = false;
-            var vertexValue;
-            for(j=0;j<jLen;j+=1){
-                for(k=0;k<kLen;k+=1){
-                    if(isHold){
-                        vertexValue = keyPropS.i[j][k];
-                        if(this.v.i[j][k] !== vertexValue){
-                            this.v.i[j][k] = vertexValue;
-                            this.pv.i[j][k] = vertexValue;
-                            hasModified = true;
-                        }
-                        vertexValue = keyPropS.o[j][k];
-                        if(this.v.o[j][k] !== vertexValue){
-                            this.v.o[j][k] = vertexValue;
-                            this.pv.o[j][k] = vertexValue;
-                            hasModified = true;
-                        }
-                        vertexValue = keyPropS.v[j][k];
-                        if(this.v.v[j][k] !== vertexValue){
-                            this.v.v[j][k] = vertexValue;
-                            this.pv.v[j][k] = vertexValue;
-                            hasModified = true;
-                        }
-                    }else{
-                        vertexValue = keyPropS.i[j][k]+(keyPropE.i[j][k]-keyPropS.i[j][k])*perc;
-                        if(this.v.i[j][k] !== vertexValue){
-                            this.v.i[j][k] = vertexValue;
-                            this.pv.i[j][k] = vertexValue;
-                            hasModified = true;
-                        }
-                        vertexValue = keyPropS.o[j][k]+(keyPropE.o[j][k]-keyPropS.o[j][k])*perc;
-                        if(this.v.o[j][k] !== vertexValue){
-                            this.v.o[j][k] = vertexValue;
-                            this.pv.o[j][k] = vertexValue;
-                            hasModified = true;
-                        }
-                        vertexValue = keyPropS.v[j][k]+(keyPropE.v[j][k]-keyPropS.v[j][k])*perc;
-                        if(this.v.v[j][k] !== vertexValue){
-                            this.v.v[j][k] = vertexValue;
-                            this.pv.v[j][k] = vertexValue;
-                            hasModified = true;
-                        }
-                    }
-                }
-            }
-            this.mdf = hasModified;
-            this.v.c = keyPropS.c;
-            this.paths = this.localShapeCollection;
-        }
+      this.lastFrame = frameNum;
+      this.frameId = this.elem.globalData.frameId;
+    }
 
-        this.lastFrame = frameNum;
-        this.frameId = this.elem.globalData.frameId;
+    function interpolateSubShape(frameNum, subShapeIndex) {
+      var keyPropS, keyPropE, isHold;
+      if ( frameNum < this.keyframes[ 0 ].t - this.offsetTime ) {
+        keyPropS = this.keyframes[ 0 ].s[ subShapeIndex ];
+        isHold = true;
+        this._lastIndex = 0;
+      } else if ( frameNum >= this.keyframes[ this.keyframes.length - 1 ].t - this.offsetTime ) {
+        if ( this.keyframes[ this.keyframes.length - 2 ].h === 1 ) {
+          //keyPropS = this.keyframes[this.keyframes.length - 1].s ? this.keyframes[this.keyframes.length - 1].s[0] : this.keyframes[this.keyframes.length - 2].s[0];
+          keyPropS = this.keyframes[ this.keyframes.length - 1 ].s[ subShapeIndex ];
+        } else {
+          keyPropS = this.keyframes[ this.keyframes.length - 2 ].e[ subShapeIndex ];
+        }
+        isHold = true;
+      } else {
+        var i =  this.lastFrame < initFrame ? this._lastIndex : 0,
+          len = this.keyframes.length - 1,
+          flag = true,
+          keyData, nextKeyData, j, jLen, k, kLen;
+        while ( flag ) {
+          keyData = this.keyframes[ i ];
+          nextKeyData = this.keyframes[ i + 1 ];
+          if ( ( nextKeyData.t - this.offsetTime ) > frameNum ) {
+            break;
+          }
+          if ( i < len - 1 ) {
+            i += 1;
+          } else {
+            flag = false;
+          }
+        }
+        isHold = keyData.h === 1;
+        this._lastIndex = i;
+
+
+        var perc;
+        if ( !isHold ) {
+          if ( frameNum >= nextKeyData.t - this.offsetTime ) {
+            perc = 1;
+          } else if ( frameNum < keyData.t - this.offsetTime ) {
+            perc = 0;
+          } else {
+            var fnc;
+            if ( keyData.__fnct ) {
+              fnc = keyData.__fnct;
+            } else {
+              //fnc = bez.getEasingCurve(keyData.o.x,keyData.o.y,keyData.i.x,keyData.i.y);
+              fnc = BezierFactory.getBezierEasing( keyData.o.x, keyData.o.y, keyData.i.x, keyData.i.y ).get;
+              keyData.__fnct = fnc;
+            }
+            perc = fnc( ( frameNum - ( keyData.t - this.offsetTime ) ) / ( ( nextKeyData.t - this.offsetTime ) - ( keyData.t - this.offsetTime ) ) );
+          }
+          keyPropE = keyData.e[ subShapeIndex ];
+        }
+        keyPropS = keyData.s[ subShapeIndex ];
+      }
+      let curV = this.va[subShapeIndex]
+      let curPV = this.pva[subShapeIndex]
+      jLen = curV._length;
+      kLen = keyPropS.i[ 0 ].length;
+      var hasModified = false;
+      var vertexValue;
+      for ( j = 0; j < jLen; j += 1 ) {
+        for ( k = 0; k < kLen; k += 1 ) {
+          if ( isHold ) {
+            vertexValue = keyPropS.i[ j ][ k ];
+            if ( curV.i[ j ][ k ] !== vertexValue ) {
+              curV.i[ j ][ k ] = vertexValue;
+              curPV.i[j][k] = vertexValue;
+              hasModified = true;
+            }
+            vertexValue = keyPropS.o[ j ][ k ];
+            if ( curV.o[ j ][ k ] !== vertexValue ) {
+              curV.o[ j ][ k ] = vertexValue;
+              curPV.o[j][k] = vertexValue;
+              hasModified = true;
+            }
+            vertexValue = keyPropS.v[ j ][ k ];
+            if ( curV.v[ j ][ k ] !== vertexValue ) {
+              curV.v[ j ][ k ] = vertexValue;
+              curPV.v[j][k] = vertexValue;
+              hasModified = true;
+            }
+          } else {
+            vertexValue = keyPropS.i[ j ][ k ] + ( keyPropE.i[ j ][ k ] - keyPropS.i[ j ][ k ] ) * perc;
+            if ( curV.i[ j ][ k ] !== vertexValue ) {
+              curV.i[ j ][ k ] = vertexValue;
+              curPV.i[j][k] = vertexValue;
+              hasModified = true;
+            }
+            vertexValue = keyPropS.o[ j ][ k ] + ( keyPropE.o[ j ][ k ] - keyPropS.o[ j ][ k ] ) * perc;
+            if ( curV.o[ j ][ k ] !== vertexValue ) {
+              curV.o[ j ][ k ] = vertexValue;
+              curPV.o[j][k] = vertexValue;
+              hasModified = true;
+            }
+            vertexValue = keyPropS.v[ j ][ k ] + ( keyPropE.v[ j ][ k ] - keyPropS.v[ j ][ k ] ) * perc;
+            if ( curV.v[ j ][ k ] !== vertexValue ) {
+              curV.v[ j ][ k ] = vertexValue;
+              curPV.v[j][k] = vertexValue;
+              hasModified = true;
+            }
+          }
+        }
+      }
+      this.mdf = hasModified;
+      // this.paths.length = 0;
+      curV.c = keyPropS.c;
+      return curV;
     }
 
     function getShapeValue(){
-        return this.v;
+        return this.va;
     }
 
     function resetShape(){
@@ -130,40 +151,54 @@ var ShapePropertyFactory = (function(){
         this.comp = elem.comp;
         this.k = false;
         this.mdf = false;
-        this.v = shape_pool.newShape();
+
         var pathData = type === 3 ? data.pt.k : data.ks.k;
-        this.v.v = pathData.v;
-        this.v.i = pathData.i;
-        this.v.o = pathData.o;
-        this.v.c = pathData.c;
-        this.v._length = this.v.v.length;
-        this.getValue = getShapeValue;
-        this.pv = shape_pool.clone(this.v);
+        if (!pathData.length) {
+          pathData = [pathData]
+        }
         this.localShapeCollection = shapeCollection_pool.newShapeCollection();
         this.paths = this.localShapeCollection;
-        this.paths.addShape(this.v);
+        for (let i = 0, length = pathData.length; i < length; i++) {
+          let pd = pathData[i]
+          let v = shape_pool.newShape();
+          v.v = pd.v;
+          v.i = pd.i;
+          v.o = pd.o;
+          v.c = pd.c;
+          v._length = v.v.length;
+          this.getValue = getShapeValue;
+          this.pv = shape_pool.clone(v);
+          this.paths.addShape(v);
+        }
+
         this.reset = resetShape;
     }
 
     function KeyframedShapeProperty(elem,data,type){
-        this.comp = elem.comp;
-        this.elem = elem;
-        this.offsetTime = elem.data.st;
-        this._lastIndex = 0;
-        this.getValue = interpolateShape;
-        this.keyframes = type === 3 ? data.pt.k : data.ks.k;
-        this.k = true;
-        this.kf = true;
-        var i, len = this.keyframes[0].s[0].i.length;
-        var jLen = this.keyframes[0].s[0].i[0].length;
-        this.v = shape_pool.newShape();
-        this.v.setPathData(this.keyframes[0].s[0].c, len);
-        this.pv = shape_pool.clone(this.v);
-        this.localShapeCollection = shapeCollection_pool.newShapeCollection();
-        this.paths = this.localShapeCollection;
-        this.paths.addShape(this.v);
-        this.lastFrame = initFrame;
-        this.reset = resetShape;
+      this.comp = elem.comp;
+      this.elem = elem;
+      this.offsetTime = elem.data.st;
+      this._lastIndex = 0;
+      this.getValue = interpolateShape;
+      this.keyframes = type === 3 ? data.pt.k : data.ks.k;
+      this.k = true;
+      let kfs = this.keyframes[ 0 ].s;
+      let vaLen = kfs.length;
+
+      this.va = new Array(vaLen);
+      this.pva = new Array(vaLen);
+      this.localShapeCollection = shapeCollection_pool.newShapeCollection();
+      this.paths = this.localShapeCollection;
+      for (let vaInd = 0; vaInd < vaLen; vaInd++) {
+        let i, len = kfs[ vaInd ].i.length;
+        let jLen = kfs[ vaInd ].i[ 0 ].length;
+        this.va[vaInd] = shape_pool.newShape();
+        this.va[vaInd].setPathData(this.keyframes[0].s[0].c, len);
+        this.pva[vaInd] = shape_pool.clone(this.va[vaInd]);
+        this.paths.addShape(this.va[vaInd]);
+      }
+      this.lastFrame = initFrame;
+      this.reset = resetShape;
     }
 
     var EllShapeProperty = (function(){
@@ -496,7 +531,7 @@ var ShapePropertyFactory = (function(){
         if(type === 3 || type === 4){
             var dataProp = type === 3 ? data.pt : data.ks;
             var keys = dataProp.k;
-            if(dataProp.a === 1 || keys.length){
+            if(dataProp.a === 1 || (keys.length && keys[0].s)){
                 prop = new KeyframedShapeProperty(elem, data, type);
             }else{
                 prop = new ShapeProperty(elem, data, type);
